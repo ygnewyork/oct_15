@@ -1,0 +1,96 @@
+---
+title: "SDS Homework 2"
+author: "Yash Gupta"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60))
+
+library(ggplot2)
+library(kableExtra)
+```
+
+We will be investigating the prevalence of leprosy around the globe. We will also be computing various statistics and figuring out distributions through using R functions.
+
+# Question 1
+
+```{r}
+
+leprosy <- read.csv('Homework2_leprosy.csv')
+
+highest_cases <- leprosy[which.max(leprosy$New_Cases), ]
+```
+
+The country that had the most new leprosy cases in 2022 is `r highest_cases$Country`, with `r highest_cases$New_Cases` new leprosy cases in 2022. This variable isn’t by itself a fair comparison since it isn’t by capita and instead by population, which India has the 2nd-most of at the time of this data being collected, so naturally it would be higher than other countries. To be more accurate, the number of leprosy data should be tracked by capita rather than simply by a country’s whole population.
+
+# Question 2
+
+```{r}
+
+leprosy$per_capita <- (leprosy$New_Cases / leprosy$Population) * 100000
+
+library(ggplot2)
+
+ggplot(leprosy, aes(x = per_capita)) +
+  geom_histogram(fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of New Leprosy \nCases per 100K People by country",
+       y = "Number of Countries with \nnumber of cases per 100k",
+       x = "New Leprosy Cases per 100K People")
+
+mean_per <- mean(leprosy$per_capita, na.rm = TRUE)
+sd_per <- sd(leprosy$per_capita, na.rm = TRUE)
+five_num <- fivenum(leprosy$per_capita, na.rm = TRUE)
+
+print(round(five_num, 2))
+
+```
+
+This data distribution is skewed right with outliers for new leprosy cases, as the mean is higher than the median. The statistics are for mean - `r round(mean_per, 2)`, standard deviation - `r round(sd_per, 2)`, and five-number summary - min: 0.00, q1: 0.00, med: 0.11, q3: 1.05, max: 29.6.
+
+# Question 3
+
+```{r}
+ggplot(leprosy, aes(x = per_capita, y = Region, fill = Region)) +
+  geom_boxplot() +
+  labs(title = "New Leprosy Cases distribution \nper 100K by Region",
+       y = "Region",
+       x = "New Leprosy Cases per 100K") + 
+  theme(legend.position = "none")
+
+valid_data <- subset(leprosy, !is.na(per_capita))
+
+summary_table <- aggregate(per_capita ~ Region, data = valid_data, FUN = function(x) c(length(x), per_capita = median(x, na.rm = TRUE)))
+
+summary_table <- do.call(data.frame, summary_table)
+
+summary_table[-1] <- round(summary_table[-1], 2)
+
+colnames(summary_table) <- c("Region", "Number of Countries", 
+"New Median Cases per 100K")
+
+kable_output <- kable(summary_table)
+
+kable_output
+
+```
+
+Africa has the highest median new cases per 100k, with about 0.91. On the other hand, Europe has the lowest number of cases per 100k, with about 0.00. The Middle East has the 2nd least at 0.05, followed by the Americas at 0.21, followed by the Asia/Pacific region at 0.42. Overall, African countries tend to be the most likely places for leprosy, with European countries being the least likely.
+
+# Question 4
+
+```{r}
+
+ggplot(leprosy, aes(x = GDP_billions, y = per_capita)) + geom_point(color = "blue", size = 3) + labs(title = "Relationship between GDP and \nNew Leprosy Cases per 100K", x = "GDP (Billions)", y = "New Leprosy Cases per 100K")
+
+corr <- cor(leprosy$GDP_billions, leprosy$per_capita, use = "complete.obs")
+```
+
+When comparing the variables of GDP and Leprosy Cases per 100k, we get close to no correlation, with the value being approximately `r round(corr, 2)`, indicating an extremely weak negative relationship.
+
+# Question 5
+
+Overall, it was found that India has the most new leprosy cases overall (which is also due partly as they had the 2nd highest population at the time of this study), but by region Africa does when looking at it from a per-capita viewpoint. This may be due to reduced access to preventative healthcare in Africa and sanitation/hygiene concerns. In Europe, however, due to high healthcare standards, they have the lowest rate of leprosy. As well as this, there seems to be next to no correlation in the GDP of a country and the per-capita rate of leprosy. Click [here](https://leprosyhistory.org/) to learn more about this disease.
